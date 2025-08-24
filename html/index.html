@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cocina Compacto - Supervivencia</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="cooking-interface">
+        <!-- Botón de Cerrar -->
+        <div class="close-button" onclick="closeInterface()">×</div>
+
+        <!-- Panel de Recetas -->
+        <div class="recipes-panel">
+            <div class="recipes-title">Recetas</div>
+            <div id="recipesList"></div>
+        </div>
+
+        <!-- Área Central de Cocina -->
+        <div class="cooking-main">
+            <div class="recipe-header">
+                <div class="recipe-title" id="selectedRecipeTitle">Selecciona una Receta</div>
+                <div class="recipe-description" id="selectedRecipeDesc">
+                    Elige una receta del panel izquierdo para comenzar a cocinar
+                </div>
+            </div>
+
+            <div class="cooking-circle">
+                <div class="circle-background"></div>
+                
+                <!-- Plato Central -->
+                <div class="food-plate">
+                    <div class="food-content" id="foodContent"><i class="fas fa-utensils"></i></div>
+                </div>
+
+                <!-- Controles Circulares -->
+                <div class="cooking-controls">
+                    <div class="control-item control-fire" onclick="controlAction('fire')">
+                        <div class="control-icon"><i class="fas fa-fire"></i></div>
+                        <div class="control-label">Fuego</div>
+                    </div>
+                    <div class="control-item control-water" onclick="controlAction('water')">
+                        <div class="control-icon"><i class="fas fa-droplet"></i></div>
+                        <div class="control-label">Agua</div>
+                    </div>
+                    <div class="control-item control-stir" onclick="controlAction('stir')">
+                        <div class="control-icon"><i class="fas fa-spoon"></i></div>
+                        <div class="control-label">Remover</div>
+                    </div>
+                    <div class="control-item control-seasoning" onclick="controlAction('seasoning')">
+                        <div class="control-icon"><i class="fas fa-pepper-hot"></i></div>
+                        <div class="control-label">Sazón</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barras de Progreso -->
+            <div class="progress-section">
+                <div class="progress-item">
+                    <div class="progress-label">Fuego</div>
+                    <div class="progress-bar progress-fire">
+                        <div class="progress-fill" id="fireProgress"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">Cocción</div>
+                    <div class="progress-bar progress-cooking">
+                        <div class="progress-fill" id="cookingProgress"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">Calidad</div>
+                    <div class="progress-bar progress-quality">
+                        <div class="progress-fill" id="qualityProgress"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón de Cocinar -->
+            <button class="cook-button" id="cookButton" onclick="startCooking()">
+                Comenzar Cocción
+            </button>
+        </div>
+
+        <!-- Panel de Ingredientes -->
+        <div class="ingredients-panel">
+            <div class="ingredients-title">Ingredientes</div>
+            <div id="ingredientsList"></div>
+
+            <!-- Resultados Esperados -->
+            <div class="expected-results">
+                <div class="results-title">Resultado Esperado</div>
+                <div id="expectedResultsList"></div>
+            </div>
+        </div>
+
+        <!-- Instrucciones del Minijuego -->
+        <div class="game-instructions">
+            <div class="instructions-title">Cómo Jugar</div>
+            <div class="instruction-item">1. Selecciona una receta del panel izquierdo</div>
+            <div class="instruction-item">2. Verifica que tengas todos los ingredientes</div>
+            <div class="instruction-item">3. Haz clic en "COMENZAR COCCIÓN"</div>
+            <div class="instruction-item">4. Usa los controles circulares:</div>
+            <div class="instruction-sub"><i class="fas fa-fire"></i> Mantén el fuego activo</div>
+            <div class="instruction-sub"><i class="fas fa-droplet"></i> Enfría si se quema</div>
+            <div class="instruction-sub"><i class="fas fa-spoon"></i> Remueve para calidad</div>
+            <div class="instruction-sub"><i class="fas fa-pepper-hot"></i> Añade sazón al final</div>
+            <div class="instruction-item">5. Necesitas mín. 30% calidad</div>
+            <div class="instruction-item">6. La cocción termina automáticamente</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
