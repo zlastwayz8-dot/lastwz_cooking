@@ -49,6 +49,7 @@ end
 -- ========================================
 
 -- Abrir interfaz de cocina
+- Abrir interfaz de cocina
 local function OpenCookingUI()
     local nearestStation, distance = GetNearestStation()
     
@@ -62,14 +63,14 @@ local function OpenCookingUI()
         return
     end
     
-    -- Obtener inventario del jugador y preparar recetas
+    -- ✅ Obtener inventario y preparar recetas
     QBCore.Functions.TriggerCallback('survival-cooking:getPlayerInventory', function(inventory)
-        PrepareRecipesData(inventory)
+        local recipesData = PrepareRecipesData(inventory)
         
         SetNuiFocus(true, true)
         SendNUIMessage({
             type = 'openCooking',
-            recipes = currentRecipes
+            recipes = recipesData  -- ✅ Enviar recetas procesadas
         })
         
         isNuiOpen = true
@@ -99,7 +100,7 @@ end
 
 -- Preparar datos de recetas con inventario
 function PrepareRecipesData(inventory)
-    currentRecipes = {}
+    local recipesData = {}
     
     for _, recipe in ipairs(Config.Recipes) do
         local recipeData = {
@@ -136,8 +137,10 @@ function PrepareRecipesData(inventory)
             })
         end
         
-        table.insert(currentRecipes, recipeData)
+        table.insert(recipesData, recipeData)
     end
+    
+    return recipesData
 end
 
 -- ========================================
