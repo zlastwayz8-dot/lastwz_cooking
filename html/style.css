@@ -21,7 +21,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+    background: transparent;
     color: var(--tarkov-primary);
     overflow: hidden;
     user-select: none;

@@ -1,8 +1,16 @@
-// script.js recibe datos del cliente
+// ========================================
+// VARIABLES GLOBALES
+// ========================================
+
 let gameState = {
-    recipes: [] // ✅ Se llena desde client.lua
-}
+    recipes: [],
+    selectedRecipe: null,
+    isCooking: false,
+    cooking: { fire: 0, progress: 0, quality: 100 }
+};
+
 let gameInterval = null;
+let isProcessing = false; // ✅ Variable que faltaba
 
 // ========================================
 // FUNCIONES DE UTILIDAD
@@ -10,6 +18,10 @@ let gameInterval = null;
 
 // Validar estado del juego
 function validateGameState() {
+    if (isProcessing) {
+        return { valid: false, error: 'Procesando otra acción...' };
+    }
+    
     if (!gameState.selectedRecipe) {
         return { valid: false, error: 'No hay receta seleccionada' };
     }
@@ -35,8 +47,22 @@ function validateGameState() {
 
 // Inicializar interfaz
 function initInterface() {
-    renderRecipes();
-    updateInterface();
+    try {
+        // Resetear estado
+        gameState = {
+            recipes: [],
+            selectedRecipe: null,
+            isCooking: false,
+            cooking: { fire: 0, progress: 0, quality: 100 }
+        };
+        
+        renderRecipes();
+        updateInterface();
+        
+        console.log('Interfaz inicializada correctamente');
+    } catch (error) {
+        console.error('Error inicializando interfaz:', error);
+    }
 }
 
 // Renderizar lista de recetas
@@ -49,7 +75,7 @@ function renderRecipes() {
     
     container.innerHTML = '';
 
-    if (gameState.recipes.length === 0) {
+    if (!gameState.recipes || gameState.recipes.length === 0) {
         container.innerHTML = '<div style="text-align: center; color: var(--tarkov-primary); font-size: 11px; padding: 20px;">Cargando recetas...</div>';
         return;
     }
@@ -218,12 +244,16 @@ function controlAction(type) {
 
 // Comenzar cocción
 function startCooking() {
+    if (isProcessing) return;
+    
     try {
         const validation = validateGameState();
         if (!validation.valid) {
             alert(validation.error);
             return;
         }
+
+        isProcessing = true;
 
         // Enviar al cliente para procesar en servidor
         if (window.invokeNative) {
@@ -254,10 +284,16 @@ function startCooking() {
             checkCookingComplete();
         }, 100);
 
+        console.log('Cocción iniciada:', gameState.selectedRecipe.name);
+
     } catch (error) {
         console.error('Error iniciando cocción:', error);
         gameState.isCooking = false;
         updateCookButton();
+    } finally {
+        setTimeout(() => {
+            isProcessing = false;
+        }, 1000);
     }
 }
 
@@ -400,21 +436,44 @@ function updateInterface() {
 
 // Cerrar interfaz
 function closeInterface() {
+    if (isProcessing) return;
+    
     try {
+        isProcessing = true;
+        
         if (gameInterval) {
             clearInterval(gameInterval);
             gameInterval = null;
         }
         
+        // Resetear estado del juego
+        gameState.isCooking = false;
+        gameState.selectedRecipe = null;
+        gameState.cooking = { fire: 0, progress: 0, quality: 100 };
+        
+        // Limpiar efectos visuales
+        const foodContent = document.getElementById('foodContent');
+        if (foodContent) {
+            foodContent.classList.remove('cooking');
+            foodContent.innerHTML = '<i class="fas fa-utensils"></i>';
+        }
+        
+        // Notificar a FiveM
         if (window.invokeNative) {
             window.invokeNative('sendNuiMessage', JSON.stringify({
                 type: 'closeUI'
             }));
-        } else {
-            document.body.style.display = 'none';
         }
+        
+        // Ocultar interfaz
+        document.body.style.display = 'none';
+        
+        console.log('Interfaz cerrada correctamente');
+        
     } catch (error) {
         console.error('Error cerrando interfaz:', error);
+    } finally {
+        isProcessing = false;
     }
 }
 
@@ -426,21 +485,33 @@ function closeInterface() {
 window.addEventListener('message', function(event) {
     try {
         const data = event.data;
+        console.log('Mensaje recibido:', data.type, data);
         
         switch(data.type) {
             case 'openCooking':
-                // ✅ Recibir recetas procesadas desde el cliente
+                isProcessing = true;
+                
+                // Resetear estado antes de abrir
+                gameState.isCooking = false;
+                gameState.selectedRecipe = null;
+                gameState.cooking = { fire: 0, progress: 0, quality: 100 };
+                
+                // Cargar recetas
                 if (data.recipes && Array.isArray(data.recipes)) {
                     gameState.recipes = data.recipes;
+                    console.log('Recetas cargadas:', data.recipes.length);
                     renderRecipes();
                     renderIngredients();
                     renderExpectedResults();
                 }
+                
                 document.body.style.display = 'flex';
+                console.log('Interfaz abierta');
+                
+                setTimeout(() => { isProcessing = false; }, 500);
                 break;
                 
             case 'updateRecipes':
-                // ✅ Actualizar recetas cuando cambie el inventario
                 if (data.recipes && Array.isArray(data.recipes)) {
                     gameState.recipes = data.recipes;
                     renderRecipes();
@@ -459,11 +530,16 @@ window.addEventListener('message', function(event) {
                 break;
                 
             case 'ingredientsReady':
-                // Ingredientes preparados, el minijuego puede continuar
+                console.log('Ingredientes preparados para cocción');
+                break;
+                
+            default:
+                console.log('Mensaje desconocido:', data.type);
                 break;
         }
     } catch (error) {
         console.error('Error procesando mensaje:', error);
+        isProcessing = false;
     }
 });
 
@@ -472,25 +548,39 @@ document.addEventListener('keydown', function(event) {
     try {
         switch(event.code) {
             case 'Escape':
+                event.preventDefault();
                 closeInterface();
                 break;
+                
             case 'Space':
                 event.preventDefault();
                 const cookButton = document.getElementById('cookButton');
-                if (cookButton && !cookButton.disabled) {
+                if (cookButton && !cookButton.disabled && !gameState.isCooking) {
                     startCooking();
                 }
                 break;
+                
             case 'Digit1':
+            case 'Numpad1':
+                event.preventDefault();
                 controlAction('fire');
                 break;
+                
             case 'Digit2':
+            case 'Numpad2':
+                event.preventDefault();
                 controlAction('water');
                 break;
+                
             case 'Digit3':
+            case 'Numpad3':
+                event.preventDefault();
                 controlAction('stir');
                 break;
+                
             case 'Digit4':
+            case 'Numpad4':
+                event.preventDefault();
                 controlAction('seasoning');
                 break;
         }
@@ -500,5 +590,44 @@ document.addEventListener('keydown', function(event) {
 });
 
 // Inicializar al cargar
-document.addEventListener('DOMContentLoaded', initInterface);
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Ocultar interfaz por defecto
+        document.body.style.display = 'none';
+        
+        // Inicializar interfaz
+        initInterface();
+        
+        console.log('Sistema de cocina inicializado correctamente');
+    } catch (error) {
+        console.error('Error en inicialización:', error);
+    }
+});
 
+// Manejo de errores globales
+window.addEventListener('error', function(event) {
+    console.error('Error global en UI de cocina:', event.error);
+    
+    // Intentar resetear si hay error crítico
+    if (gameState.isCooking) {
+        try {
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            gameState.isCooking = false;
+        } catch (cleanupError) {
+            console.error('Error durante cleanup:', cleanupError);
+        }
+    }
+    
+    isProcessing = false;
+});
+
+// Prevenir cierre accidental con clicks fuera
+document.addEventListener('click', function(event) {
+    // Solo cerrar si se hace clic específicamente en el botón de cerrar
+    if (event.target.classList.contains('close-button')) {
+        closeInterface();
+    }
+});
