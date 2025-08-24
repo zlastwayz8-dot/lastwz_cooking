@@ -470,15 +470,20 @@ body {
 /* Instrucciones del Minijuego */
 .game-instructions {
     position: absolute;
-    top: 15px;
+    bottom: 15px;
     right: 15px;
-    width: 220px;
+    width: 200px;
     background: var(--tarkov-bg);
     border: 1px solid var(--tarkov-border);
-    padding: 12px;
+    padding: 10px;
     backdrop-filter: blur(5px);
+    opacity: 0.9;
+    transition: opacity 0.3s ease;
 }
 
+.game-instructions:hover {
+    opacity: 1;
+}
 .instructions-title {
     color: var(--tarkov-highlight);
     font-size: 12px;
@@ -550,4 +555,5 @@ body {
         width: 800px;
         height: 550px;
     }
+
 }
