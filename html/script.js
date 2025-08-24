@@ -25,12 +25,21 @@ function getItemImageUrl(itemName) {
     return `${INVENTORY_IMAGES_PATH}${itemName}${IMAGE_EXTENSION}`;
 }
 
-// ✅ Función para crear elemento de imagen con fallback
+// ✅ Función para crear elemento de imagen con fallback - CORREGIDA PARA EVITAR PARPADEO
 function createItemImage(itemName, altText = '', className = '') {
     const img = document.createElement('img');
     img.src = getItemImageUrl(itemName);
     img.alt = altText || itemName;
     img.className = className;
+    
+    // ✅ PREVENIR PARPADEO: Establecer opacity inicial
+    img.style.opacity = '0';
+    img.style.transition = 'opacity 0.3s ease';
+    
+    // ✅ Evento cuando la imagen se carga correctamente
+    img.onload = function() {
+        this.style.opacity = '1';
+    };
     
     // ✅ Fallback si la imagen no carga
     img.onerror = function() {
@@ -39,6 +48,7 @@ function createItemImage(itemName, altText = '', className = '') {
         const fallbackIcon = document.createElement('div');
         fallbackIcon.className = 'item-fallback-icon';
         fallbackIcon.innerHTML = '<i class="fas fa-utensils"></i>';
+        fallbackIcon.style.opacity = '1';
         this.parentNode.appendChild(fallbackIcon);
     };
     
@@ -94,7 +104,7 @@ function initInterface() {
     }
 }
 
-// ✅ Renderizar lista de recetas - ACTUALIZADO CON IMÁGENES
+// ✅ Renderizar lista de recetas - SIN PARPADEO
 function renderRecipes() {
     const container = document.getElementById('recipesList');
     if (!container) {
@@ -148,7 +158,7 @@ function selectRecipe(recipe) {
         document.getElementById('selectedRecipeTitle').textContent = recipe.name;
         document.getElementById('selectedRecipeDesc').textContent = recipe.description;
         
-        // ✅ Mostrar imagen del resultado en el plato central
+        // ✅ Mostrar imagen del resultado en el plato central - SIN PARPADEO
         const foodContent = document.getElementById('foodContent');
         foodContent.innerHTML = '';
         const resultImg = createItemImage(recipe.result.image, recipe.result.name, 'food-result-image');
@@ -163,7 +173,7 @@ function selectRecipe(recipe) {
     }
 }
 
-// ✅ Renderizar ingredientes requeridos - ACTUALIZADO CON IMÁGENES
+// ✅ Renderizar ingredientes requeridos - SIN PARPADEO
 function renderIngredients() {
     const container = document.getElementById('ingredientsList');
     if (!container) return;
@@ -198,7 +208,7 @@ function renderIngredients() {
     });
 }
 
-// ✅ Renderizar resultados esperados - ACTUALIZADO CON IMÁGENES
+// ✅ Renderizar resultados esperados - SIN PARPADEO
 function renderExpectedResults() {
     const container = document.getElementById('expectedResultsList');
     if (!container) return;
@@ -301,7 +311,7 @@ function startCooking() {
     try {
         const validation = validateGameState();
         if (!validation.valid) {
-            alert(validation.error);
+            console.log('Validación fallida:', validation.error);
             return;
         }
 
@@ -380,7 +390,7 @@ function checkCookingComplete() {
     }
 }
 
-// Completar cocción
+// ✅ Completar cocción - SIN ALERTS, AUTO-CERRAR UI
 function completeCooking() {
     try {
         if (gameInterval) {
@@ -400,51 +410,39 @@ function completeCooking() {
         
         if (success) {
             const result = gameState.selectedRecipe.result;
-            showResult(result, gameState.cooking.quality);
+            finalizeCookingProcess(true, result, gameState.cooking.quality);
         } else {
-            showFailureResult(gameState.cooking.quality);
+            finalizeCookingProcess(false, null, gameState.cooking.quality);
         }
         
-        resetCooking();
     } catch (error) {
         console.error('Error completando cocción:', error);
         resetCooking();
     }
 }
 
-// Mostrar resultado exitoso
-function showResult(result, quality) {
-    const message = `¡Cocción exitosa!\n${result.name}\nCalidad: ${Math.round(quality)}%`;
-    alert(message);
+// ✅ NUEVA FUNCIÓN: Finalizar proceso sin alerts
+function finalizeCookingProcess(success, result, quality) {
+    console.log('Cocción finalizada:', success ? 'Éxito' : 'Fallo', 'Calidad:', Math.round(quality) + '%');
 
-    // Comunicar con FiveM
+    // ✅ Comunicar con FiveM ANTES de cerrar
     if (window.invokeNative) {
         window.invokeNative('sendNuiMessage', JSON.stringify({
             type: 'cookingComplete',
-            success: true,
+            success: success,
             recipe: gameState.selectedRecipe.name,
-            result: result.name,
+            result: success ? result.name : null,
             quality: Math.round(quality)
         }));
     }
+    
+    // ✅ CERRAR UI AUTOMÁTICAMENTE después de 1 segundo
+    setTimeout(() => {
+        closeInterface();
+    }, 1000);
 }
 
-// Mostrar resultado fallido
-function showFailureResult(quality) {
-    const message = `¡Cocción fallida!\nComida arruinada\nCalidad: ${Math.round(quality)}%\n\nNo obtuviste ningún item.`;
-    alert(message);
-
-    // Comunicar con FiveM
-    if (window.invokeNative) {
-        window.invokeNative('sendNuiMessage', JSON.stringify({
-            type: 'cookingComplete',
-            success: false,
-            recipe: gameState.selectedRecipe.name,
-            result: null,
-            quality: Math.round(quality)
-        }));
-    }
-}
+// ✅ FUNCIONES ELIMINADAS: showResult y showFailureResult (ya no se usan)
 
 // Resetear estado de cocción
 function resetCooking() {
@@ -486,7 +484,7 @@ function updateInterface() {
     }
 }
 
-// ✅ Cerrar interfaz - MEJORADO PARA FOCUS
+// ✅ Cerrar interfaz - MEJORADO
 function closeInterface() {
     if (isProcessing) {
         console.log('Cerrando interfaz cancelado - procesando');
@@ -685,7 +683,7 @@ window.addEventListener('error', function(event) {
     isProcessing = false;
 });
 
-// ✅ Prevenir cierre accidental con clicks fuera - MEJORADO
+// ✅ Prevenir cierre accidental con clicks fuera
 document.addEventListener('click', function(event) {
     // Solo cerrar si se hace clic específicamente en el botón de cerrar
     if (event.target.classList.contains('close-button')) {
