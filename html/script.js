@@ -1,49 +1,6 @@
-// Estado del juego
+// Estado del juego - SIN recetas hardcodeadas
 let gameState = {
-    recipes: [
-        {
-            id: 1,
-            name: 'Sopa de Carne',
-            icon: 'fas fa-bowl-food',
-            level: 'Lv. 1',
-            description: 'Sopa básica con carne enlatada y verduras. Perfecta para sobrevivir.',
-            ingredients: [
-                { name: 'Carne Enlatada', icon: 'fas fa-can-food', required: 1, available: 2 },
-                { name: 'Verduras', icon: 'fas fa-carrot', required: 1, available: 3 },
-                { name: 'Agua', icon: 'fas fa-droplet', required: 1, available: 5 }
-            ],
-            cookingTime: 45,
-            result: { name: 'Sopa de Carne', icon: 'fas fa-bowl-food' }
-        },
-        {
-            id: 2,
-            name: 'Guiso de Frijoles',
-            icon: 'fas fa-seedling',
-            level: 'Lv. 2',
-            description: 'Nutritivo guiso que te dará energía para explorar.',
-            ingredients: [
-                { name: 'Frijoles', icon: 'fas fa-seedling', required: 2, available: 4 },
-                { name: 'Especias', icon: 'fas fa-pepper-hot', required: 1, available: 1 },
-                { name: 'Aceite', icon: 'fas fa-oil-can', required: 1, available: 2 }
-            ],
-            cookingTime: 60,
-            result: { name: 'Guiso de Frijoles', icon: 'fas fa-seedling' }
-        },
-        {
-            id: 3,
-            name: 'Pasta Simple',
-            icon: 'fas fa-wheat-awn',
-            level: 'Lv. 1',
-            description: 'Comida rápida cuando tienes prisa y zombies cerca.',
-            ingredients: [
-                { name: 'Pasta', icon: 'fas fa-wheat-awn', required: 1, available: 1 },
-                { name: 'Aceite', icon: 'fas fa-oil-can', required: 1, available: 2 },
-                { name: 'Agua', icon: 'fas fa-droplet', required: 2, available: 5 }
-            ],
-            cookingTime: 30,
-            result: { name: 'Pasta Cocida', icon: 'fas fa-wheat-awn' }
-        }
-    ],
+    recipes: [], // ✅ Array vacío - se llena desde el cliente
     selectedRecipe: null,
     cooking: {
         fire: 0,
@@ -55,6 +12,35 @@ let gameState = {
 
 let gameInterval = null;
 
+// ========================================
+// FUNCIONES DE UTILIDAD
+// ========================================
+
+// Validar estado del juego
+function validateGameState() {
+    if (!gameState.selectedRecipe) {
+        return { valid: false, error: 'No hay receta seleccionada' };
+    }
+    
+    if (gameState.isCooking) {
+        return { valid: false, error: 'Ya está cocinando' };
+    }
+    
+    const canCook = gameState.selectedRecipe.ingredients.every(ing => 
+        ing.available >= ing.required
+    );
+    
+    if (!canCook) {
+        return { valid: false, error: 'Ingredientes insuficientes' };
+    }
+    
+    return { valid: true };
+}
+
+// ========================================
+// FUNCIONES DE RENDERIZADO
+// ========================================
+
 // Inicializar interfaz
 function initInterface() {
     renderRecipes();
@@ -64,46 +50,66 @@ function initInterface() {
 // Renderizar lista de recetas
 function renderRecipes() {
     const container = document.getElementById('recipesList');
+    if (!container) {
+        console.error('Contenedor de recetas no encontrado');
+        return;
+    }
+    
     container.innerHTML = '';
 
+    if (gameState.recipes.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--tarkov-primary); font-size: 11px; padding: 20px;">Cargando recetas...</div>';
+        return;
+    }
+
     gameState.recipes.forEach(recipe => {
-        const canCook = recipe.ingredients.every(ing => ing.available >= ing.required);
-        
-        const item = document.createElement('div');
-        item.className = `recipe-item ${gameState.selectedRecipe?.id === recipe.id ? 'selected' : ''}`;
-        item.onclick = () => selectRecipe(recipe);
-        
-        item.innerHTML = `
-            <div class="recipe-icon"><i class="${recipe.icon}"></i></div>
-            <div class="recipe-info">
-                <div class="recipe-name">${recipe.name}</div>
-                <div class="recipe-level">${recipe.level}</div>
-                <div class="recipe-available" style="color: ${canCook ? 'var(--tarkov-success)' : 'var(--tarkov-danger)'}">
-                    ${canCook ? 'Disponible' : 'Sin ingredientes'}
+        try {
+            const canCook = recipe.ingredients.every(ing => ing.available >= ing.required);
+            
+            const item = document.createElement('div');
+            item.className = `recipe-item ${gameState.selectedRecipe?.id === recipe.id ? 'selected' : ''}`;
+            item.onclick = () => selectRecipe(recipe);
+            
+            item.innerHTML = `
+                <div class="recipe-icon"><i class="${recipe.icon}"></i></div>
+                <div class="recipe-info">
+                    <div class="recipe-name">${recipe.name}</div>
+                    <div class="recipe-level">${recipe.level}</div>
+                    <div class="recipe-available" style="color: ${canCook ? 'var(--tarkov-success)' : 'var(--tarkov-danger)'}">
+                        ${canCook ? 'Disponible' : 'Sin ingredientes'}
+                    </div>
                 </div>
-            </div>
-        `;
-        
-        container.appendChild(item);
+            `;
+            
+            container.appendChild(item);
+        } catch (error) {
+            console.error('Error renderizando receta:', recipe.id, error);
+        }
     });
 }
 
 // Seleccionar receta
 function selectRecipe(recipe) {
-    gameState.selectedRecipe = recipe;
-    document.getElementById('selectedRecipeTitle').textContent = recipe.name;
-    document.getElementById('selectedRecipeDesc').textContent = recipe.description;
-    document.getElementById('foodContent').innerHTML = `<i class="${recipe.icon}"></i>`;
-    
-    renderIngredients();
-    renderExpectedResults();
-    renderRecipes();
-    updateCookButton();
+    try {
+        gameState.selectedRecipe = recipe;
+        document.getElementById('selectedRecipeTitle').textContent = recipe.name;
+        document.getElementById('selectedRecipeDesc').textContent = recipe.description;
+        document.getElementById('foodContent').innerHTML = `<i class="${recipe.icon}"></i>`;
+        
+        renderIngredients();
+        renderExpectedResults();
+        renderRecipes();
+        updateCookButton();
+    } catch (error) {
+        console.error('Error seleccionando receta:', error);
+    }
 }
 
 // Renderizar ingredientes requeridos
 function renderIngredients() {
     const container = document.getElementById('ingredientsList');
+    if (!container) return;
+    
     container.innerHTML = '';
 
     if (!gameState.selectedRecipe) {
@@ -131,6 +137,8 @@ function renderIngredients() {
 // Renderizar resultados esperados
 function renderExpectedResults() {
     const container = document.getElementById('expectedResultsList');
+    if (!container) return;
+    
     container.innerHTML = '';
 
     if (!gameState.selectedRecipe) return;
@@ -153,6 +161,7 @@ function renderExpectedResults() {
 // Actualizar botón de cocinar
 function updateCookButton() {
     const button = document.getElementById('cookButton');
+    if (!button) return;
     
     if (!gameState.selectedRecipe) {
         button.disabled = true;
@@ -174,77 +183,113 @@ function updateCookButton() {
     }
 }
 
+// ========================================
+// CONTROLES DEL MINIJUEGO
+// ========================================
+
 // Acciones de control
 function controlAction(type) {
     if (!gameState.isCooking) return;
 
-    const control = document.querySelector(`.control-${type}`);
-    control.classList.add('active');
-    
-    setTimeout(() => {
-        control.classList.remove('active');
-    }, 500);
+    try {
+        const control = document.querySelector(`.control-${type}`);
+        if (!control) {
+            console.error(`Control no encontrado: ${type}`);
+            return;
+        }
 
-    switch(type) {
-        case 'fire':
-            gameState.cooking.fire = Math.min(100, gameState.cooking.fire + 20);
-            break;
-        case 'water':
-            gameState.cooking.fire = Math.max(0, gameState.cooking.fire - 10);
-            gameState.cooking.quality = Math.min(100, gameState.cooking.quality + 5);
-            break;
-        case 'stir':
-            gameState.cooking.quality = Math.min(100, gameState.cooking.quality + 10);
-            break;
-        case 'seasoning':
-            gameState.cooking.quality = Math.min(100, gameState.cooking.quality + 15);
-            break;
+        control.classList.add('active');
+        
+        setTimeout(() => {
+            control.classList.remove('active');
+        }, 500);
+
+        switch(type) {
+            case 'fire':
+                gameState.cooking.fire = Math.min(100, gameState.cooking.fire + 20);
+                break;
+            case 'water':
+                gameState.cooking.fire = Math.max(0, gameState.cooking.fire - 10);
+                gameState.cooking.quality = Math.min(100, gameState.cooking.quality + 5);
+                break;
+            case 'stir':
+                gameState.cooking.quality = Math.min(100, gameState.cooking.quality + 10);
+                break;
+            case 'seasoning':
+                gameState.cooking.quality = Math.min(100, gameState.cooking.quality + 15);
+                break;
+        }
+    } catch (error) {
+        console.error('Error en controlAction:', error);
     }
 }
 
 // Comenzar cocción
 function startCooking() {
-    if (!gameState.selectedRecipe || gameState.isCooking) return;
+    try {
+        const validation = validateGameState();
+        if (!validation.valid) {
+            alert(validation.error);
+            return;
+        }
 
-    // Consumir ingredientes
-    gameState.selectedRecipe.ingredients.forEach(ingredient => {
-        ingredient.available -= ingredient.required;
-    });
+        // Enviar al cliente para procesar en servidor
+        if (window.invokeNative) {
+            window.invokeNative('sendNuiMessage', JSON.stringify({
+                type: 'startCooking',
+                recipeId: gameState.selectedRecipe.id
+            }));
+        }
 
-    gameState.isCooking = true;
-    gameState.cooking = { fire: 30, progress: 0, quality: 100 };
-    
-    const foodContent = document.getElementById('foodContent');
-    foodContent.classList.add('cooking');
+        gameState.isCooking = true;
+        gameState.cooking = { fire: 30, progress: 0, quality: 100 };
+        
+        const foodContent = document.getElementById('foodContent');
+        if (foodContent) {
+            foodContent.classList.add('cooking');
+        }
 
-    updateCookButton();
-    renderIngredients();
+        updateCookButton();
+        
+        // Iniciar loop de cocción
+        if (gameInterval) {
+            clearInterval(gameInterval);
+        }
+        
+        gameInterval = setInterval(() => {
+            updateCooking();
+            updateInterface();
+            checkCookingComplete();
+        }, 100);
 
-    // Iniciar loop de cocción
-    gameInterval = setInterval(() => {
-        updateCooking();
-        updateInterface();
-        checkCookingComplete();
-    }, 100);
+    } catch (error) {
+        console.error('Error iniciando cocción:', error);
+        gameState.isCooking = false;
+        updateCookButton();
+    }
 }
 
 // Actualizar proceso de cocción
 function updateCooking() {
     if (!gameState.isCooking) return;
 
-    // El fuego se consume
-    gameState.cooking.fire = Math.max(0, gameState.cooking.fire - 0.2);
-    
-    // Progreso de cocción
-    if (gameState.cooking.fire > 20) {
-        gameState.cooking.progress += (gameState.cooking.fire / 100) * 0.8;
-    }
+    try {
+        // El fuego se consume
+        gameState.cooking.fire = Math.max(0, gameState.cooking.fire - 0.2);
+        
+        // Progreso de cocción
+        if (gameState.cooking.fire > 20) {
+            gameState.cooking.progress += (gameState.cooking.fire / 100) * 0.8;
+        }
 
-    // Efectos en la calidad
-    if (gameState.cooking.fire > 80) {
-        gameState.cooking.quality = Math.max(0, gameState.cooking.quality - 0.3); // Se quema
-    } else if (gameState.cooking.fire < 20 && gameState.cooking.progress < 80) {
-        gameState.cooking.quality = Math.max(0, gameState.cooking.quality - 0.1); // Se enfría
+        // Efectos en la calidad
+        if (gameState.cooking.fire > 80) {
+            gameState.cooking.quality = Math.max(0, gameState.cooking.quality - 0.3); // Se quema
+        } else if (gameState.cooking.fire < 20 && gameState.cooking.progress < 80) {
+            gameState.cooking.quality = Math.max(0, gameState.cooking.quality - 0.1); // Se enfría
+        }
+    } catch (error) {
+        console.error('Error en updateCooking:', error);
     }
 }
 
@@ -257,23 +302,34 @@ function checkCookingComplete() {
 
 // Completar cocción
 function completeCooking() {
-    clearInterval(gameInterval);
-    gameState.isCooking = false;
+    try {
+        if (gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
+        
+        gameState.isCooking = false;
 
-    const foodContent = document.getElementById('foodContent');
-    foodContent.classList.remove('cooking');
+        const foodContent = document.getElementById('foodContent');
+        if (foodContent) {
+            foodContent.classList.remove('cooking');
+        }
 
-    // Verificar si la calidad es suficiente para obtener el item
-    const success = gameState.cooking.quality >= 30;
-    
-    if (success) {
-        const result = gameState.selectedRecipe.result;
-        showResult(result, gameState.cooking.quality);
-    } else {
-        showFailureResult(gameState.cooking.quality);
+        // Verificar si la calidad es suficiente para obtener el item
+        const success = gameState.cooking.quality >= 30;
+        
+        if (success) {
+            const result = gameState.selectedRecipe.result;
+            showResult(result, gameState.cooking.quality);
+        } else {
+            showFailureResult(gameState.cooking.quality);
+        }
+        
+        resetCooking();
+    } catch (error) {
+        console.error('Error completando cocción:', error);
+        resetCooking();
     }
-    
-    resetCooking();
 }
 
 // Mostrar resultado exitoso
@@ -312,78 +368,142 @@ function showFailureResult(quality) {
 
 // Resetear estado de cocción
 function resetCooking() {
-    gameState.selectedRecipe = null;
-    gameState.cooking = { fire: 0, progress: 0, quality: 100 };
-    
-    document.getElementById('selectedRecipeTitle').textContent = 'Selecciona una Receta';
-    document.getElementById('selectedRecipeDesc').textContent = 'Elige una receta del panel izquierdo para comenzar a cocinar';
-    document.getElementById('foodContent').innerHTML = '<i class="fas fa-utensils"></i>';
-    
-    renderRecipes();
-    renderIngredients();
-    renderExpectedResults();
-    updateCookButton();
+    try {
+        if (gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
+        
+        gameState.selectedRecipe = null;
+        gameState.cooking = { fire: 0, progress: 0, quality: 100 };
+        gameState.isCooking = false;
+        
+        document.getElementById('selectedRecipeTitle').textContent = 'Selecciona una Receta';
+        document.getElementById('selectedRecipeDesc').textContent = 'Elige una receta del panel izquierdo para comenzar a cocinar';
+        document.getElementById('foodContent').innerHTML = '<i class="fas fa-utensils"></i>';
+        
+        renderRecipes();
+        renderIngredients();
+        renderExpectedResults();
+        updateCookButton();
+    } catch (error) {
+        console.error('Error reseteando cocción:', error);
+    }
 }
 
 // Actualizar interfaz
 function updateInterface() {
-    document.getElementById('fireProgress').style.width = `${gameState.cooking.fire}%`;
-    document.getElementById('cookingProgress').style.width = `${gameState.cooking.progress}%`;
-    document.getElementById('qualityProgress').style.width = `${gameState.cooking.quality}%`;
+    try {
+        const fireProgress = document.getElementById('fireProgress');
+        const cookingProgress = document.getElementById('cookingProgress');
+        const qualityProgress = document.getElementById('qualityProgress');
+        
+        if (fireProgress) fireProgress.style.width = `${gameState.cooking.fire}%`;
+        if (cookingProgress) cookingProgress.style.width = `${gameState.cooking.progress}%`;
+        if (qualityProgress) qualityProgress.style.width = `${gameState.cooking.quality}%`;
+    } catch (error) {
+        console.error('Error actualizando interfaz:', error);
+    }
 }
 
 // Cerrar interfaz
 function closeInterface() {
-    if (window.invokeNative) {
-        window.invokeNative('sendNuiMessage', JSON.stringify({
-            type: 'closeUI'
-        }));
-    } else {
-        document.body.style.display = 'none';
+    try {
+        if (gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
+        
+        if (window.invokeNative) {
+            window.invokeNative('sendNuiMessage', JSON.stringify({
+                type: 'closeUI'
+            }));
+        } else {
+            document.body.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error cerrando interfaz:', error);
     }
 }
 
+// ========================================
+// EVENT LISTENERS
+// ========================================
+
 // Event listeners para FiveM
 window.addEventListener('message', function(event) {
-    const data = event.data;
-    
-    switch(data.type) {
-        case 'openCooking':
-            document.body.style.display = 'flex';
-            break;
-        case 'closeCooking':
-            closeInterface();
-            break;
-        case 'updateIngredients':
-            // Actualizar disponibilidad de ingredientes
-            break;
+    try {
+        const data = event.data;
+        
+        switch(data.type) {
+            case 'openCooking':
+                // ✅ Recibir recetas procesadas desde el cliente
+                if (data.recipes && Array.isArray(data.recipes)) {
+                    gameState.recipes = data.recipes;
+                    renderRecipes();
+                    renderIngredients();
+                    renderExpectedResults();
+                }
+                document.body.style.display = 'flex';
+                break;
+                
+            case 'updateRecipes':
+                // ✅ Actualizar recetas cuando cambie el inventario
+                if (data.recipes && Array.isArray(data.recipes)) {
+                    gameState.recipes = data.recipes;
+                    renderRecipes();
+                    if (gameState.selectedRecipe) {
+                        const updatedRecipe = data.recipes.find(r => r.id === gameState.selectedRecipe.id);
+                        if (updatedRecipe) {
+                            gameState.selectedRecipe = updatedRecipe;
+                            renderIngredients();
+                        }
+                    }
+                }
+                break;
+                
+            case 'closeCooking':
+                closeInterface();
+                break;
+                
+            case 'ingredientsReady':
+                // Ingredientes preparados, el minijuego puede continuar
+                break;
+        }
+    } catch (error) {
+        console.error('Error procesando mensaje:', error);
     }
 });
 
 // Controles de teclado
 document.addEventListener('keydown', function(event) {
-    switch(event.code) {
-        case 'Escape':
-            closeInterface();
-            break;
-        case 'Space':
-            event.preventDefault();
-            if (document.getElementById('cookButton').disabled === false) {
-                startCooking();
-            }
-            break;
-        case 'Digit1':
-            controlAction('fire');
-            break;
-        case 'Digit2':
-            controlAction('water');
-            break;
-        case 'Digit3':
-            controlAction('stir');
-            break;
-        case 'Digit4':
-            controlAction('seasoning');
-            break;
+    try {
+        switch(event.code) {
+            case 'Escape':
+                closeInterface();
+                break;
+            case 'Space':
+                event.preventDefault();
+                const cookButton = document.getElementById('cookButton');
+                if (cookButton && !cookButton.disabled) {
+                    startCooking();
+                }
+                break;
+            case 'Digit1':
+                controlAction('fire');
+                break;
+            case 'Digit2':
+                controlAction('water');
+                break;
+            case 'Digit3':
+                controlAction('stir');
+                break;
+            case 'Digit4':
+                controlAction('seasoning');
+                break;
+        }
+    } catch (error) {
+        console.error('Error en controles de teclado:', error);
     }
 });
 
