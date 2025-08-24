@@ -15,22 +15,22 @@ local function DebugPrint(msg)
     end
 end
 
--- Obtener inventario del jugador
+-- ✅ Obtener inventario del jugador - CORREGIDO
 local function GetPlayerInventory(source)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then return {} end
     
     local inventory = {}
     
-    -- Para tgiann-inventory, usar el export GetInventory
-    local playerInventory = exports['tgiann-inventory']:GetInventory(source)
+    -- ✅ Usar export GetPlayerItems de tgiann-inventory
+    local playerItems = exports['tgiann-inventory']:GetPlayerItems(source)
     
-    if playerInventory then
-        for slot, item in pairs(playerInventory) do
-            if item and item.count and item.count > 0 then
+    if playerItems then
+        for slot, item in pairs(playerItems) do
+            if item and item.amount and item.amount > 0 then
                 table.insert(inventory, {
                     name = item.name,
-                    amount = item.count,
+                    amount = item.amount,
                     slot = slot
                 })
             end
@@ -40,7 +40,7 @@ local function GetPlayerInventory(source)
     return inventory
 end
 
--- Verificar si el jugador tiene suficientes ingredientes
+-- ✅ Verificar si el jugador tiene suficientes ingredientes - CORREGIDO
 local function HasEnoughIngredients(source, recipeId)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then return false end
@@ -52,9 +52,9 @@ local function HasEnoughIngredients(source, recipeId)
         local ingredientConfig = Config.GetIngredient(ingredient.ingredient)
         if not ingredientConfig then return false end
         
-        -- Usar export GetItem de tgiann-inventory
-        local hasItem = exports['tgiann-inventory']:GetItem(source, ingredientConfig.item)
-        if not hasItem or hasItem.count < ingredient.required then
+        -- ✅ Usar export HasItem de tgiann-inventory
+        local hasEnough = exports['tgiann-inventory']:HasItem(source, ingredientConfig.item, ingredient.required)
+        if not hasEnough then
             return false
         end
     end
@@ -62,7 +62,7 @@ local function HasEnoughIngredients(source, recipeId)
     return true
 end
 
--- Consumir ingredientes del inventario
+-- ✅ Consumir ingredientes del inventario - CORREGIDO
 local function ConsumeIngredients(source, recipeId)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then return false end
@@ -75,7 +75,7 @@ local function ConsumeIngredients(source, recipeId)
         return false
     end
     
-    -- Consumir ingredientes usando export RemoveItem de tgiann-inventory
+    -- ✅ Consumir ingredientes usando export RemoveItem de tgiann-inventory
     for _, ingredient in ipairs(recipe.ingredients) do
         local ingredientConfig = Config.GetIngredient(ingredient.ingredient)
         if ingredientConfig then
@@ -90,12 +90,12 @@ local function ConsumeIngredients(source, recipeId)
     return true
 end
 
--- Dar item al jugador
+-- ✅ Dar item al jugador - CORREGIDO
 local function GiveItemToPlayer(source, itemName, amount)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then return false end
     
-    -- Usar export AddItem de tgiann-inventory
+    -- ✅ Usar export AddItem de tgiann-inventory
     local success = exports['tgiann-inventory']:AddItem(source, itemName, amount)
     
     if success then
@@ -128,14 +128,14 @@ end
 -- CALLBACKS DE QBCORE
 -- ========================================
 
--- Obtener inventario del jugador
+-- ✅ Obtener inventario del jugador - CORREGIDO
 QBCore.Functions.CreateCallback('survival-cooking:getPlayerInventory', function(source, cb)
     local inventory = GetPlayerInventory(source)
     DebugPrint('Inventario obtenido para jugador ' .. source .. ': ' .. #inventory .. ' items')
     cb(inventory)
 end)
 
--- Verificar si puede cocinar una receta
+-- ✅ Verificar si puede cocinar una receta - CORREGIDO
 QBCore.Functions.CreateCallback('survival-cooking:canCookRecipe', function(source, cb, recipeId)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then
@@ -169,7 +169,7 @@ end)
 -- EVENTOS DE RED
 -- ========================================
 
--- Consumir ingredientes para cocinar
+-- ✅ Consumir ingredientes para cocinar - CORREGIDO
 RegisterNetEvent('survival-cooking:consumeIngredients', function(recipeId)
     local source = source
     local Player = QBCore.Functions.GetPlayer(source)
@@ -211,7 +211,7 @@ RegisterNetEvent('survival-cooking:consumeIngredients', function(recipeId)
     end
 end)
 
--- Completar proceso de cocción
+-- ✅ Completar proceso de cocción - CORREGIDO
 RegisterNetEvent('survival-cooking:completeCooking', function(cookingData)
     local source = source
     local Player = QBCore.Functions.GetPlayer(source)
@@ -291,7 +291,7 @@ end)
 -- COMANDOS DE ADMINISTRADOR
 -- ========================================
 
--- Comando para dar ingredientes (para testing)
+-- ✅ Comando para dar ingredientes (para testing) - CORREGIDO
 RegisterCommand('darIngredientes', function(source, args)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then return end
@@ -302,7 +302,7 @@ RegisterCommand('darIngredientes', function(source, args)
         return
     end
     
-    -- Dar ingredientes básicos usando tgiann-inventory
+    -- ✅ Dar ingredientes básicos usando tgiann-inventory exports correctos
     local ingredientsToGive = {
         'canned_meat',
         'vegetables', 
@@ -343,6 +343,26 @@ RegisterCommand('resetEstaciones', function(source, args)
     DebugPrint('Estaciones reseteadas por admin')
 end, false)
 
+-- ✅ Comando adicional para verificar inventario (debugging)
+RegisterCommand('verificarInventario', function(source, args)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    if not QBCore.Functions.HasPermission(source, 'admin') then
+        TriggerClientEvent('QBCore:Notify', source, 'No tienes permisos', 'error')
+        return
+    end
+    
+    local inventory = GetPlayerInventory(source)
+    DebugPrint('=== INVENTARIO DEL JUGADOR ' .. source .. ' ===')
+    for i, item in ipairs(inventory) do
+        DebugPrint(string.format('Slot %s: %s x%d', item.slot, item.name, item.amount))
+    end
+    DebugPrint('=== FIN INVENTARIO ===')
+    
+    TriggerClientEvent('QBCore:Notify', source, 'Inventario mostrado en consola del servidor', 'primary')
+end, false)
+
 -- ========================================
 -- INICIALIZACIÓN
 -- ========================================
@@ -351,8 +371,18 @@ end, false)
 CreateThread(function()
     Wait(1000)
     print('^2[SURVIVAL-COOKING]^7 Sistema de cocina cargado correctamente')
+    print('^2[SURVIVAL-COOKING]^7 Framework: ' .. Config.Framework)
+    print('^2[SURVIVAL-COOKING]^7 Inventario: ' .. Config.Inventory)
     print('^2[SURVIVAL-COOKING]^7 Estaciones configuradas: ' .. #Config.CookingStations)
     print('^2[SURVIVAL-COOKING]^7 Recetas disponibles: ' .. #Config.Recipes)
+    
+    -- ✅ Verificar que tgiann-inventory esté disponible
+    local tgiannStatus = GetResourceState('tgiann-inventory')
+    if tgiannStatus == 'started' then
+        print('^2[SURVIVAL-COOKING]^7 tgiann-inventory detectado y funcionando')
+    else
+        print('^1[SURVIVAL-COOKING]^7 ERROR: tgiann-inventory no está iniciado!')
+    end
 end)
 
 -- ========================================
@@ -375,6 +405,6 @@ local function LogCookingAction(source, action, data)
     
     print(logMessage)
     
-    -- Aquí podrías añadir logging a base de datos si lo necesitas
+    -- ✅ Descomentar si tienes qb-logs
     -- TriggerEvent('qb-logs:server:CreateLog', 'cooking', action, 'blue', logMessage)
 end

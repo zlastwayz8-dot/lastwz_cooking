@@ -7,13 +7,13 @@ Config = {}
 Config.Framework = 'qb-core'
 Config.Inventory = 'tgiann-inventory'
 
-Config.Debug = false -- Mensajes de debug en consola
+Config.Debug = true -- ✅ ACTIVADO PARA DEBUGGING
 Config.UseProgressBar = true -- Usar barra de progreso durante cocción
 Config.ProgressBarTime = 2000 -- Tiempo en ms para la barra de progreso
 
 Config.CookingStations = {
     vector3(-1196.43, -890.85, 13.9), -- Vespucci Beach
-    vector3(1961.64, 5184.33, 47.98), -- Grapeseed
+    vector3(1961.64, 5184.33, 47.98), -- Grapeseed  
     vector3(2556.75, 4681.03, 34.08), -- Mount Chiliad
 }
 
