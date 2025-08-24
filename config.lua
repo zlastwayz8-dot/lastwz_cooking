@@ -4,8 +4,8 @@ Config = {}
 -- CONFIGURACIÓN GENERAL DEL SISTEMA
 -- ========================================
 
-Config.Framework = 'qb-core' -- 'qb-core' o 'esx'
-Config.Inventory = 'qb-inventory' -- 'qb-inventory', 'ox_inventory', 'esx_inventory'
+Config.Framework = 'qb-core'
+Config.Inventory = 'tgiann-inventory'
 
 Config.Debug = false -- Mensajes de debug en consola
 Config.UseProgressBar = true -- Usar barra de progreso durante cocción
@@ -102,20 +102,11 @@ Config.Recipes = {
         results = {
             success = {
                 item = 'meat_soup',
-                amount = 1,
-                metadata = {
-                    hunger = 60,
-                    thirst = 20,
-                    description = 'Una deliciosa sopa de carne casera'
-                }
+                amount = 1
             },
             failure = {
                 item = 'burnt_food',
-                amount = 1,
-                metadata = {
-                    hunger = 5,
-                    description = 'Comida quemada, barely edible'
-                }
+                amount = 1
             }
         }
     },
@@ -139,21 +130,11 @@ Config.Recipes = {
         results = {
             success = {
                 item = 'bean_stew',
-                amount = 1,
-                metadata = {
-                    hunger = 80,
-                    thirst = 10,
-                    health = 15,
-                    description = 'Un nutritivo guiso de frijoles'
-                }
+                amount = 1
             },
             failure = {
                 item = 'burnt_food',
-                amount = 1,
-                metadata = {
-                    hunger = 5,
-                    description = 'Comida quemada, barely edible'
-                }
+                amount = 1
             }
         }
     },
@@ -177,20 +158,11 @@ Config.Recipes = {
         results = {
             success = {
                 item = 'cooked_pasta',
-                amount = 1,
-                metadata = {
-                    hunger = 50,
-                    thirst = 5,
-                    description = 'Pasta simple pero sabrosa'
-                }
+                amount = 1
             },
             failure = {
                 item = 'burnt_food',
-                amount = 1,
-                metadata = {
-                    hunger = 5,
-                    description = 'Comida quemada, barely edible'
-                }
+                amount = 1
             }
         }
     }
@@ -262,14 +234,4 @@ end
 -- Obtener ingrediente por nombre
 function Config.GetIngredient(name)
     return Config.Ingredients[name]
-end
-
--- Verificar si el jugador puede cocinar una receta
-function Config.CanCookRecipe(playerId, recipeId)
-    local recipe = Config.GetRecipe(recipeId)
-    if not recipe then return false end
-    
-    -- Aquí iría la lógica de verificación de inventario
-    -- Esta función se implementaría en el server.lua
-    return true
 end
