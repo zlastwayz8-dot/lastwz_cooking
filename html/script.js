@@ -1,15 +1,7 @@
-// Estado del juego - SIN recetas hardcodeadas
+// script.js recibe datos del cliente
 let gameState = {
-    recipes: [], // ✅ Array vacío - se llena desde el cliente
-    selectedRecipe: null,
-    cooking: {
-        fire: 0,
-        progress: 0,
-        quality: 100
-    },
-    isCooking: false
-};
-
+    recipes: [] // ✅ Se llena desde client.lua
+}
 let gameInterval = null;
 
 // ========================================
@@ -509,3 +501,4 @@ document.addEventListener('keydown', function(event) {
 
 // Inicializar al cargar
 document.addEventListener('DOMContentLoaded', initInterface);
+
