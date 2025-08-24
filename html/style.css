@@ -79,6 +79,7 @@ body {
     border-color: var(--tarkov-secondary);
 }
 
+/* ✅ ESTILOS ACTUALIZADOS PARA IMÁGENES EN RECETAS */
 .recipe-icon {
     width: 35px;
     height: 35px;
@@ -89,10 +90,33 @@ body {
     justify-content: center;
     margin-right: 10px;
     font-size: 16px;
+    overflow: hidden;
+    position: relative;
+}
+
+.recipe-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 2px;
 }
 
 .recipe-icon i {
     color: var(--tarkov-primary);
+}
+
+/* Fallback para iconos cuando no hay imagen */
+.item-fallback-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tarkov-primary);
+    background: rgba(0, 0, 0, 0.7);
 }
 
 .recipe-info {
@@ -166,7 +190,7 @@ body {
     background: radial-gradient(circle, rgba(154, 32, 64, 0.1), transparent);
 }
 
-/* Plato Central */
+/* ✅ Plato Central - ACTUALIZADO PARA IMÁGENES */
 .food-plate {
     width: 120px;
     height: 120px;
@@ -178,6 +202,7 @@ body {
     justify-content: center;
     position: relative;
     z-index: 10;
+    overflow: hidden;
 }
 
 .food-content {
@@ -190,10 +215,26 @@ body {
     justify-content: center;
     font-size: 24px;
     transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
 }
 
 .food-content i {
     color: var(--tarkov-highlight);
+    position: relative;
+    z-index: 2;
+}
+
+/* ✅ Imagen del resultado en el plato */
+.food-result-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
 
 .food-content.cooking {
@@ -354,6 +395,7 @@ body {
     background: rgba(139, 69, 19, 0.1);
 }
 
+/* ✅ ESTILOS ACTUALIZADOS PARA IMÁGENES EN INGREDIENTES */
 .ingredient-icon {
     width: 25px;
     height: 25px;
@@ -364,6 +406,14 @@ body {
     justify-content: center;
     margin-right: 8px;
     font-size: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.ingredient-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .ingredient-icon i {
@@ -385,7 +435,7 @@ body {
     color: rgba(199, 197, 179, 0.6);
 }
 
-/* Sección de Resultados Esperados */
+/* ✅ Sección de Resultados Esperados - ACTUALIZADO PARA IMÁGENES */
 .expected-results {
     margin-top: 20px;
     background: rgba(199, 197, 179, 0.05);
@@ -418,6 +468,14 @@ body {
     justify-content: center;
     margin-right: 8px;
     font-size: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.result-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .result-icon i {
@@ -484,6 +542,7 @@ body {
 .game-instructions:hover {
     opacity: 1;
 }
+
 .instructions-title {
     color: var(--tarkov-highlight);
     font-size: 12px;
@@ -533,11 +592,54 @@ body {
     font-size: 16px;
     font-weight: bold;
     transition: all 0.3s ease;
+    z-index: 1000;
 }
 
 .close-button:hover {
     background: var(--tarkov-highlight);
     color: var(--tarkov-danger);
+}
+
+/* ✅ ESTILOS ADICIONALES PARA COMPATIBILIDAD CON IMÁGENES */
+
+/* Asegurar que las imágenes se carguen suavemente */
+img {
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+img:loaded, img.loaded {
+    opacity: 1;
+}
+
+/* Estilo para cuando las imágenes fallan en cargar */
+.ingredient-icon img:not([src]),
+.recipe-icon img:not([src]),
+.result-icon img:not([src]),
+.food-content img:not([src]) {
+    display: none;
+}
+
+/* Mejoras visuales para las imágenes */
+.ingredient-image,
+.recipe-image,
+.result-image,
+.food-result-image {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* ✅ Animación cuando la imagen carga */
+@keyframes fadeInImage {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.ingredient-image,
+.recipe-image,
+.result-image,
+.food-result-image {
+    animation: fadeInImage 0.3s ease-out;
 }
 
 /* Responsive */
@@ -555,5 +657,21 @@ body {
         width: 800px;
         height: 550px;
     }
+}
 
+/* ✅ Prevenir selección de texto e imágenes */
+.cooking-interface {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.cooking-interface img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
 }

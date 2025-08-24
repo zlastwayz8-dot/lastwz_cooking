@@ -10,11 +10,40 @@ let gameState = {
 };
 
 let gameInterval = null;
-let isProcessing = false; // ✅ Variable que faltaba
+let isProcessing = false;
+
+// ✅ CONFIGURACIÓN DE PATH DE IMÁGENES
+const INVENTORY_IMAGES_PATH = 'https://cfx-nui-inventory_images/images/';
+const IMAGE_EXTENSION = '.webp';
 
 // ========================================
 // FUNCIONES DE UTILIDAD
 // ========================================
+
+// ✅ Función para obtener URL completa de imagen
+function getItemImageUrl(itemName) {
+    return `${INVENTORY_IMAGES_PATH}${itemName}${IMAGE_EXTENSION}`;
+}
+
+// ✅ Función para crear elemento de imagen con fallback
+function createItemImage(itemName, altText = '', className = '') {
+    const img = document.createElement('img');
+    img.src = getItemImageUrl(itemName);
+    img.alt = altText || itemName;
+    img.className = className;
+    
+    // ✅ Fallback si la imagen no carga
+    img.onerror = function() {
+        this.style.display = 'none';
+        // Crear un icono de fallback
+        const fallbackIcon = document.createElement('div');
+        fallbackIcon.className = 'item-fallback-icon';
+        fallbackIcon.innerHTML = '<i class="fas fa-utensils"></i>';
+        this.parentNode.appendChild(fallbackIcon);
+    };
+    
+    return img;
+}
 
 // Validar estado del juego
 function validateGameState() {
@@ -65,7 +94,7 @@ function initInterface() {
     }
 }
 
-// Renderizar lista de recetas
+// ✅ Renderizar lista de recetas - ACTUALIZADO CON IMÁGENES
 function renderRecipes() {
     const container = document.getElementById('recipesList');
     if (!container) {
@@ -88,17 +117,23 @@ function renderRecipes() {
             item.className = `recipe-item ${gameState.selectedRecipe?.id === recipe.id ? 'selected' : ''}`;
             item.onclick = () => selectRecipe(recipe);
             
-            item.innerHTML = `
-                <div class="recipe-icon"><i class="${recipe.icon}"></i></div>
-                <div class="recipe-info">
-                    <div class="recipe-name">${recipe.name}</div>
-                    <div class="recipe-level">${recipe.level}</div>
-                    <div class="recipe-available" style="color: ${canCook ? 'var(--tarkov-success)' : 'var(--tarkov-danger)'}">
-                        ${canCook ? 'Disponible' : 'Sin ingredientes'}
-                    </div>
+            const recipeIcon = document.createElement('div');
+            recipeIcon.className = 'recipe-icon';
+            const recipeImg = createItemImage(recipe.image, recipe.name, 'recipe-image');
+            recipeIcon.appendChild(recipeImg);
+            
+            const recipeInfo = document.createElement('div');
+            recipeInfo.className = 'recipe-info';
+            recipeInfo.innerHTML = `
+                <div class="recipe-name">${recipe.name}</div>
+                <div class="recipe-level">${recipe.level}</div>
+                <div class="recipe-available" style="color: ${canCook ? 'var(--tarkov-success)' : 'var(--tarkov-danger)'}">
+                    ${canCook ? 'Disponible' : 'Sin ingredientes'}
                 </div>
             `;
             
+            item.appendChild(recipeIcon);
+            item.appendChild(recipeInfo);
             container.appendChild(item);
         } catch (error) {
             console.error('Error renderizando receta:', recipe.id, error);
@@ -112,7 +147,12 @@ function selectRecipe(recipe) {
         gameState.selectedRecipe = recipe;
         document.getElementById('selectedRecipeTitle').textContent = recipe.name;
         document.getElementById('selectedRecipeDesc').textContent = recipe.description;
-        document.getElementById('foodContent').innerHTML = `<i class="${recipe.icon}"></i>`;
+        
+        // ✅ Mostrar imagen del resultado en el plato central
+        const foodContent = document.getElementById('foodContent');
+        foodContent.innerHTML = '';
+        const resultImg = createItemImage(recipe.result.image, recipe.result.name, 'food-result-image');
+        foodContent.appendChild(resultImg);
         
         renderIngredients();
         renderExpectedResults();
@@ -123,7 +163,7 @@ function selectRecipe(recipe) {
     }
 }
 
-// Renderizar ingredientes requeridos
+// ✅ Renderizar ingredientes requeridos - ACTUALIZADO CON IMÁGENES
 function renderIngredients() {
     const container = document.getElementById('ingredientsList');
     if (!container) return;
@@ -140,19 +180,25 @@ function renderIngredients() {
         const item = document.createElement('div');
         item.className = `ingredient-slot ${hasEnough ? 'required' : 'missing'}`;
         
-        item.innerHTML = `
-            <div class="ingredient-icon"><i class="${ingredient.icon}"></i></div>
-            <div class="ingredient-info">
-                <div class="ingredient-name">${ingredient.name}</div>
-                <div class="ingredient-count">${ingredient.available}/${ingredient.required}</div>
-            </div>
+        const ingredientIcon = document.createElement('div');
+        ingredientIcon.className = 'ingredient-icon';
+        const ingredientImg = createItemImage(ingredient.image, ingredient.name, 'ingredient-image');
+        ingredientIcon.appendChild(ingredientImg);
+        
+        const ingredientInfo = document.createElement('div');
+        ingredientInfo.className = 'ingredient-info';
+        ingredientInfo.innerHTML = `
+            <div class="ingredient-name">${ingredient.name}</div>
+            <div class="ingredient-count">${ingredient.available}/${ingredient.required}</div>
         `;
         
+        item.appendChild(ingredientIcon);
+        item.appendChild(ingredientInfo);
         container.appendChild(item);
     });
 }
 
-// Renderizar resultados esperados
+// ✅ Renderizar resultados esperados - ACTUALIZADO CON IMÁGENES
 function renderExpectedResults() {
     const container = document.getElementById('expectedResultsList');
     if (!container) return;
@@ -165,14 +211,20 @@ function renderExpectedResults() {
     const item = document.createElement('div');
     item.className = 'result-item';
     
-    item.innerHTML = `
-        <div class="result-icon"><i class="${result.icon}"></i></div>
-        <div class="result-info">
-            <div class="result-name">${result.name}</div>
-            <div class="result-chance">Solo si calidad ≥ 30%</div>
-        </div>
+    const resultIcon = document.createElement('div');
+    resultIcon.className = 'result-icon';
+    const resultImg = createItemImage(result.image, result.name, 'result-image');
+    resultIcon.appendChild(resultImg);
+    
+    const resultInfo = document.createElement('div');
+    resultInfo.className = 'result-info';
+    resultInfo.innerHTML = `
+        <div class="result-name">${result.name}</div>
+        <div class="result-chance">Solo si calidad ≥ 30%</div>
     `;
     
+    item.appendChild(resultIcon);
+    item.appendChild(resultInfo);
     container.appendChild(item);
 }
 
@@ -434,12 +486,17 @@ function updateInterface() {
     }
 }
 
-// Cerrar interfaz
+// ✅ Cerrar interfaz - MEJORADO PARA FOCUS
 function closeInterface() {
-    if (isProcessing) return;
+    if (isProcessing) {
+        console.log('Cerrando interfaz cancelado - procesando');
+        return;
+    }
     
     try {
         isProcessing = true;
+        
+        console.log('Iniciando cierre de interfaz...');
         
         if (gameInterval) {
             clearInterval(gameInterval);
@@ -458,22 +515,26 @@ function closeInterface() {
             foodContent.innerHTML = '<i class="fas fa-utensils"></i>';
         }
         
-        // Notificar a FiveM
+        // ✅ IMPORTANTE: Notificar a FiveM ANTES de ocultar
         if (window.invokeNative) {
             window.invokeNative('sendNuiMessage', JSON.stringify({
                 type: 'closeUI'
             }));
         }
         
-        // Ocultar interfaz
-        document.body.style.display = 'none';
-        
-        console.log('Interfaz cerrada correctamente');
+        // ✅ Delay pequeño para asegurar que FiveM procese el mensaje
+        setTimeout(() => {
+            // Ocultar interfaz
+            document.body.style.display = 'none';
+            console.log('Interfaz cerrada correctamente');
+        }, 50);
         
     } catch (error) {
         console.error('Error cerrando interfaz:', error);
     } finally {
-        isProcessing = false;
+        setTimeout(() => {
+            isProcessing = false;
+        }, 200);
     }
 }
 
@@ -624,10 +685,21 @@ window.addEventListener('error', function(event) {
     isProcessing = false;
 });
 
-// Prevenir cierre accidental con clicks fuera
+// ✅ Prevenir cierre accidental con clicks fuera - MEJORADO
 document.addEventListener('click', function(event) {
     // Solo cerrar si se hace clic específicamente en el botón de cerrar
     if (event.target.classList.contains('close-button')) {
         closeInterface();
+        event.stopPropagation();
+        event.preventDefault();
     }
+});
+
+// ✅ Prevenir context menu y drag
+document.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+});
+
+document.addEventListener('dragstart', function(event) {
+    event.preventDefault();
 });
