@@ -48,7 +48,7 @@ end
 -- PREPARAR DATOS DE RECETAS
 -- ========================================
 
--- ✅ Función corregida para preparar datos de recetas
+-- ✅ Función simplificada sin Config.ResultItems
 function PrepareRecipesData(inventory)
     local recipesData = {}
     
@@ -58,13 +58,13 @@ function PrepareRecipesData(inventory)
         local recipeData = {
             id = recipe.id,
             name = recipe.name,
-            icon = recipe.icon,
+            image = recipe.image,
             level = recipe.level,
             description = recipe.description,
             cookingTime = recipe.cookingTime,
             result = {
-                name = Config.ResultItems[recipe.results.success.item].name,
-                icon = recipe.icon
+                name = recipe.name, -- ✅ Usar el nombre de la receta como nombre del resultado
+                image = recipe.results.success.item -- ✅ Usar el nombre del item para la imagen
             },
             ingredients = {}
         }
@@ -72,6 +72,22 @@ function PrepareRecipesData(inventory)
         -- Verificar ingredientes disponibles
         for _, ingredient in ipairs(recipe.ingredients) do
             local ingredientConfig = Config.GetIngredient(ingredient.ingredient)
+            
+            -- ✅ VALIDACIÓN: Verificar que el ingrediente existe
+            if not ingredientConfig then
+                DebugPrint('❌ ERROR: Ingrediente no encontrado: ' .. tostring(ingredient.ingredient))
+                DebugPrint('📋 Ingredientes disponibles en config:')
+                for name, _ in pairs(Config.Ingredients) do
+                    DebugPrint('   - ' .. name)
+                end
+                
+                -- Crear ingrediente de fallback para evitar crash
+                ingredientConfig = {
+                    name = 'INGREDIENTE NO ENCONTRADO: ' .. ingredient.ingredient,
+                    item = ingredient.ingredient
+                }
+            end
+            
             local available = 0
             
             -- Contar items en inventario
@@ -85,7 +101,7 @@ function PrepareRecipesData(inventory)
             
             table.insert(recipeData.ingredients, {
                 name = ingredientConfig.name,
-                icon = ingredientConfig.icon,
+                image = ingredientConfig.item, -- ✅ Usar nombre del item para la imagen
                 required = ingredient.required,
                 available = available
             })
@@ -102,7 +118,7 @@ end
 -- MANEJO DE NUI
 -- ========================================
 
--- ✅ Función corregida para abrir interfaz de cocina
+-- Función para abrir interfaz de cocina
 local function OpenCookingUI()
     -- Verificar que no esté ya abierta
     if isNuiOpen then
@@ -131,7 +147,7 @@ local function OpenCookingUI()
     
     DebugPrint('Abriendo interfaz de cocina...')
     
-    -- ✅ Obtener inventario y preparar recetas
+    -- Obtener inventario y preparar recetas
     QBCore.Functions.TriggerCallback('survival-cooking:getPlayerInventory', function(inventory)
         DebugPrint('Inventario recibido: ' .. json.encode(inventory))
         
@@ -156,13 +172,20 @@ local function OpenCookingUI()
     end)
 end
 
--- Cerrar interfaz de cocina
+-- ✅ Cerrar interfaz de cocina - CORREGIDO
 local function CloseCookingUI()
     if not isNuiOpen then
         return
     end
     
+    DebugPrint('Cerrando interfaz de cocina...')
+    
+    -- ✅ IMPORTANTE: Asegurar que el focus se desactive ANTES de enviar mensaje
     SetNuiFocus(false, false)
+    
+    -- Pequeño delay para asegurar que el focus se desactive
+    Wait(100)
+    
     SendNUIMessage({
         type = 'closeCooking'
     })
@@ -175,7 +198,7 @@ local function CloseCookingUI()
         currentStation = nil
     end
     
-    DebugPrint('Interfaz de cocina cerrada')
+    DebugPrint('Interfaz de cocina cerrada correctamente')
 end
 
 -- ========================================
@@ -281,7 +304,7 @@ RegisterCommand('cocina', function()
     OpenCookingUI()
 end)
 
--- ✅ Control mejorado con tecla E cerca de estaciones
+-- Control con tecla E cerca de estaciones
 CreateThread(function()
     while true do
         local sleep = 1000
@@ -347,9 +370,9 @@ CreateThread(function()
     for i, coords in ipairs(Config.CookingStations) do
         local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
         
-        SetBlipSprite(blip, 568) -- Icono de comida
+        SetBlipSprite(blip, 568)
         SetBlipScale(blip, 0.7)
-        SetBlipColour(blip, 2) -- Verde
+        SetBlipColour(blip, 2)
         SetBlipAsShortRange(blip, true)
         
         BeginTextCommandSetBlipName("STRING")
@@ -372,7 +395,7 @@ CreateThread(function()
             if distance <= 50.0 then
                 sleep = 0
                 
-                local color = stationsInUse[i] and {255, 0, 0, 100} or {0, 255, 0, 100} -- Rojo si en uso, verde si libre
+                local color = stationsInUse[i] and {255, 0, 0, 100} or {0, 255, 0, 100}
                 
                 DrawMarker(
                     1, -- Tipo de marker
@@ -398,16 +421,18 @@ end)
 -- CLEANUP
 -- ========================================
 
--- Cerrar NUI al desconectar
+-- Cerrar NUI al desconectar - MEJORADO
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() == resourceName then
         if isNuiOpen then
-            CloseCookingUI()
+            DebugPrint('Recurso deteniéndose - cerrando NUI')
+            SetNuiFocus(false, false) -- ✅ Asegurar que se desactive el focus
+            isNuiOpen = false
         end
     end
 end)
 
--- Cerrar NUI con ESC
+-- Cerrar NUI con ESC - MEJORADO
 RegisterCommand('+cookingEsc', function()
     if isNuiOpen then
         DebugPrint('ESC presionado - cerrando UI')
@@ -417,6 +442,22 @@ end)
 
 RegisterKeyMapping('+cookingEsc', 'Cerrar interfaz de cocina', 'keyboard', 'ESCAPE')
 
+-- ✅ NUEVO: Manejo de errores y cleanup adicional
+CreateThread(function()
+    while true do
+        Wait(5000) -- Check cada 5 segundos
+        
+        -- Verificar si el NUI está abierto pero el jugador está lejos de estaciones
+        if isNuiOpen then
+            local nearStation = GetNearestStation()
+            if not nearStation then
+                DebugPrint('Jugador muy lejos de estación - cerrando UI automáticamente')
+                CloseCookingUI()
+            end
+        end
+    end
+end)
+
 -- ========================================
 -- INICIALIZACIÓN
 -- ========================================
@@ -425,6 +466,11 @@ CreateThread(function()
     Wait(1000)
     DebugPrint('Cliente de cocina inicializado')
     DebugPrint('Estaciones configuradas: ' .. #Config.CookingStations)
+    
+    -- ✅ Validar configuración al inicio
+    if Config.ValidateConfig then
+        Config.ValidateConfig()
+    end
     
     -- Mostrar coordenadas de estaciones para debugging
     for i, coords in ipairs(Config.CookingStations) do

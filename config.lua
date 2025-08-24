@@ -7,14 +7,12 @@ Config = {}
 Config.Framework = 'qb-core'
 Config.Inventory = 'tgiann-inventory'
 
-Config.Debug = true -- ✅ ACTIVADO PARA DEBUGGING
-Config.UseProgressBar = true -- Usar barra de progreso durante cocción
-Config.ProgressBarTime = 2000 -- Tiempo en ms para la barra de progreso
+Config.Debug = true
+Config.UseProgressBar = true
+Config.ProgressBarTime = 2000
 
 Config.CookingStations = {
-    vector3(-1196.43, -890.85, 13.9), -- Vespucci Beach
-    vector3(1961.64, 5184.33, 47.98), -- Grapeseed  
-    vector3(2556.75, 4681.03, 34.08), -- Mount Chiliad
+    vector3(1697.22, 2612.12, 45.56), -- Vespucci Beach
 }
 
 -- ========================================
@@ -22,17 +20,17 @@ Config.CookingStations = {
 -- ========================================
 
 Config.Minigame = {
-    FireDecayRate = 0.2, -- Velocidad de pérdida de fuego por tick
-    QualityBurnRate = 0.3, -- Pérdida de calidad cuando se quema
-    QualityColdRate = 0.1, -- Pérdida de calidad cuando se enfría
-    ProgressRate = 0.8, -- Velocidad de progreso de cocción
-    MinQualityForSuccess = 30, -- Calidad mínima para obtener el item
+    FireDecayRate = 0.2,
+    QualityBurnRate = 0.3,
+    QualityColdRate = 0.1,
+    ProgressRate = 0.8,
+    MinQualityForSuccess = 30,
     
     Controls = {
-        fire = 20, -- Cantidad de fuego que se añade
-        water = -10, -- Cantidad de fuego que se quita (+ calidad)
-        stir = 10, -- Cantidad de calidad que se añade
-        seasoning = 15, -- Cantidad de calidad que se añade
+        fire = 20,
+        water = -10,
+        stir = 10,
+        seasoning = 15,
     }
 }
 
@@ -43,37 +41,30 @@ Config.Minigame = {
 Config.Ingredients = {
     ['canned_meat'] = {
         name = 'Carne Enlatada',
-        icon = 'fas fa-can-food',
-        item = 'canned_meat', -- Nombre del item en el inventario
+        item = 'canned_meat',
     },
     ['vegetables'] = {
         name = 'Verduras',
-        icon = 'fas fa-carrot',
         item = 'vegetables',
     },
     ['water_bottle'] = {
         name = 'Agua',
-        icon = 'fas fa-droplet',
         item = 'water_bottle',
     },
     ['beans'] = {
         name = 'Frijoles',
-        icon = 'fas fa-seedling',
         item = 'beans',
     },
     ['spices'] = {
         name = 'Especias',
-        icon = 'fas fa-pepper-hot',
         item = 'spices',
     },
     ['cooking_oil'] = {
         name = 'Aceite',
-        icon = 'fas fa-oil-can',
         item = 'cooking_oil',
     },
     ['pasta'] = {
         name = 'Pasta',
-        icon = 'fas fa-wheat-awn',
         item = 'pasta',
     }
 }
@@ -83,39 +74,37 @@ Config.Ingredients = {
 -- ========================================
 
 Config.Recipes = {
-    -- Receta básica - Sopa de Carne
     {
         id = 1,
         name = 'Sopa de Carne',
-        icon = 'fas fa-bowl-food',
+        image = 'multi_layer_panel',
         level = 'Lv. 1',
         description = 'Sopa básica con carne enlatada y verduras. Perfecta para sobrevivir.',
-        cookingTime = 45, -- Tiempo en segundos (usado para referencia, el minijuego controla el tiempo real)
-        difficulty = 'easy', -- 'easy', 'medium', 'hard'
+        cookingTime = 45,
+        difficulty = 'easy',
         
         ingredients = {
-            { ingredient = 'canned_meat', required = 1 },
-            { ingredient = 'vegetables', required = 1 },
-            { ingredient = 'water_bottle', required = 1 }
+            { ingredient = 'padding_scraps', required = 1 },
+            { ingredient = 'padding_scraps', required = 1 },
+            { ingredient = 'padding_scraps', required = 1 }
         },
         
         results = {
             success = {
-                item = 'meat_soup',
+                item = 'multi_layer_panel',
                 amount = 1
             },
             failure = {
-                item = 'burnt_food',
+                item = 'multi_layer_panel',
                 amount = 1
             }
         }
     },
     
-    -- Receta intermedia - Guiso de Frijoles
     {
         id = 2,
         name = 'Guiso de Frijoles',
-        icon = 'fas fa-seedling',
+        image = 'bean_stew',
         level = 'Lv. 2',
         description = 'Nutritivo guiso que te dará energía para explorar.',
         cookingTime = 60,
@@ -139,11 +128,10 @@ Config.Recipes = {
         }
     },
     
-    -- Receta rápida - Pasta Simple
     {
         id = 3,
         name = 'Pasta Simple',
-        icon = 'fas fa-wheat-awn',
+        image = 'cooked_pasta',
         level = 'Lv. 1',
         description = 'Comida rápida cuando tienes prisa y zombies cerca.',
         cookingTime = 30,
@@ -165,41 +153,6 @@ Config.Recipes = {
                 amount = 1
             }
         }
-    }
-}
-
--- ========================================
--- CONFIGURACIÓN DE ITEMS DE RESULTADO
--- ========================================
-
-Config.ResultItems = {
-    ['meat_soup'] = {
-        name = 'Sopa de Carne',
-        description = 'Una deliciosa sopa de carne casera',
-        weight = 0.8,
-        stackable = true,
-        close = true,
-    },
-    ['bean_stew'] = {
-        name = 'Guiso de Frijoles',
-        description = 'Un nutritivo guiso de frijoles',
-        weight = 0.9,
-        stackable = true,
-        close = true,
-    },
-    ['cooked_pasta'] = {
-        name = 'Pasta Cocida',
-        description = 'Pasta simple pero sabrosa',
-        weight = 0.6,
-        stackable = true,
-        close = true,
-    },
-    ['burnt_food'] = {
-        name = 'Comida Quemada',
-        description = 'Comida arruinada, barely comestible',
-        weight = 0.3,
-        stackable = true,
-        close = true,
     }
 }
 
