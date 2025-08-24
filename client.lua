@@ -58,7 +58,7 @@ function PrepareRecipesData(inventory)
         local recipeData = {
             id = recipe.id,
             name = recipe.name,
-            image = recipe.image,
+            image = recipe.results.success.item, -- ✅ Usar item resultado como imagen
             level = recipe.level,
             description = recipe.description,
             cookingTime = recipe.cookingTime,
@@ -212,13 +212,19 @@ RegisterNUICallback('closeUI', function(data, cb)
     cb('ok')
 end)
 
+-- ✅ MEJORADO: Manejo de cocción completada sin alerts
 RegisterNUICallback('cookingComplete', function(data, cb)
     DebugPrint('NUI: Cocción completada: ' .. json.encode(data))
     
+    -- ✅ MEJORADO: Mostrar notificación apropiada basada en el resultado
     if data.success then
-        Notify(string.format(Config.Messages['cooking_success'], data.result, data.quality), 'success')
+        local successMsg = string.format('🍳 ¡Cocción exitosa! Has cocinado %s (Calidad: %d%%)', 
+            data.result or data.recipe, data.quality or 0)
+        Notify(successMsg, 'success')
     else
-        Notify(string.format(Config.Messages['cooking_failed'], data.quality), 'error')
+        local failureMsg = string.format('🔥 Cocción fallida. La comida se arruinó (Calidad: %d%%)', 
+            data.quality or 0)
+        Notify(failureMsg, 'error')
     end
     
     -- Enviar resultado al servidor
@@ -228,6 +234,9 @@ RegisterNUICallback('cookingComplete', function(data, cb)
         result = data.result,
         quality = data.quality
     })
+    
+    -- ✅ NUEVO: La UI ya se cierra automáticamente desde el JavaScript
+    -- No necesitamos cerrarla aquí
     
     cb('ok')
 end)
@@ -291,6 +300,22 @@ RegisterNetEvent('survival-cooking:updateInventory', function()
                 recipes = recipesData
             })
         end)
+    end
+end)
+
+-- ✅ NUEVO: Evento para manejar notificaciones de cocción
+RegisterNetEvent('survival-cooking:cookingCompleted', function(success, itemName, quality)
+    -- Cerrar UI si está abierta (como respaldo)
+    if isNuiOpen then
+        CloseCookingUI()
+    end
+    
+    -- Mostrar notificación final
+    Wait(500) -- Pequeño delay para que se procese el item
+    if success then
+        Notify(string.format('✅ Item obtenido: %s', itemName), 'success')
+    else
+        Notify('❌ No obtuviste ningún item de la cocción', 'error')
     end
 end)
 
